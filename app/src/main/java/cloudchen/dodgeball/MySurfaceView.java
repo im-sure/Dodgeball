@@ -7,6 +7,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Paint.Style;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceHolder.Callback;
@@ -36,6 +37,8 @@ import java.util.Vector;
  */
 
 public class MySurfaceView extends SurfaceView implements Callback, Runnable, ContactListener {
+
+    private final String TAG = "MySurfaceView";
     private Thread th;
     private SurfaceHolder sfh;
     private Canvas canvas;
@@ -66,7 +69,13 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
     private long time = 0;
     private TimerTask timerTask;
     private Timer timer;
-
+    private boolean isScheduled;
+    private boolean allCreated;
+    private int collision;
+    private final int NONE = 0;
+    private final int COLLIDE_TO_RED = 1;
+    private final int COLLIDE_TO_BLACK = 2;
+    private final int COLLIDE_TO_GREEN = 3;
 
     //声明游戏物体
     private final float RADIUS = 30;
@@ -76,12 +85,14 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
     private Bitmap bmpHeart;
     private Body rectU, rectD, rectL, rectR;
     private Body myBall;
-    private Boolean isBoom = true;
     private Vector<Body> vcBalls;
     private int createEnemyTime = 50;
     private int countTime = 0;
     private int countNum = 0;
     private Random random;
+    private int specialBall;
+    private final int BLACK = 0;
+    private final int GREEN = 1;
 
     //360°平滑游戏摇杆
     private MyRocker rocker;
@@ -117,6 +128,10 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
         bmpBack = BitmapFactory.decodeResource(getResources(), R.mipmap.back);
         bmpHeart = BitmapFactory.decodeResource(getResources(), R.mipmap.heart);
 
+        isScheduled = false;
+        allCreated = false;
+        collision = NONE;
+        specialBall = BLACK;
         lives = new Integer(3);
         timerTask = new TimerTask() {
             public void run() {
@@ -188,6 +203,7 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
         return body;
     }
 
+    //绘制函数
     public void draw() {
         try {
             canvas = sfh.lockCanvas();
@@ -219,8 +235,6 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
                     canvas.drawText(timeString, screenW / 4 * 3, screenH / 20, paint);
                     String livesString = "× " + lives.toString();
                     canvas.drawText(livesString, screenW / 8, screenH / 20, paint);
-                    //bmpHeart.setWidth(screenW / 8);
-                    //bmpHeart.setHeight(screenH / 20);
                     canvas.drawBitmap(bmpHeart, 10, 10, paint);
                     Body body = world.getBodyList();
                     for (int i = 1; i < world.getBodyCount(); i++) {
@@ -232,10 +246,15 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
                             MyCircle circle = (MyCircle) body.m_userData;
                             if (circle == myBall.m_userData) {
                                 paint.setColor(Color.BLUE);
-                            } else if ((countNum == enemyNum) && (circle == vcBalls.elementAt(enemyNum - 1).m_userData) && (isBoom == true)) {
-                                paint.setColor(Color.BLACK);
-                            } else if ((countNum == enemyNum) && (circle == vcBalls.elementAt(enemyNum - 1).m_userData) && (isBoom == false)) {
-                                paint.setColor(Color.GREEN);
+                            } else if ((countNum == enemyNum) && (circle == vcBalls.elementAt(enemyNum - 1).m_userData)) {
+                                switch (specialBall) {
+                                    case BLACK:
+                                        paint.setColor(Color.BLACK);
+                                        break;
+                                    case GREEN:
+                                        paint.setColor(Color.GREEN);
+                                        break;
+                                }
                             } else {
                                 paint.setColor(Color.RED);
                             }
@@ -245,7 +264,6 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
                     }
                     rocker.drawRocker(canvas, paintalpha);
                     if (gameIsOver) {
-                        timer.cancel();
                         canvas.drawRect(0, 0, screenW, screenH, paintalpha);
 
                         btnBack.draw(canvas, paint);
@@ -267,13 +285,21 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
             case GAMESTATE_MENU:
                 if (btnStart.isPressed(event)) {
                     gameState = GAMESTATE_PLAY;
-                    timer.schedule(timerTask, 1000, 1000);
+                    timer.purge();
+                    if (!isScheduled) {
+                        timer.schedule(timerTask, 1000, 1000);
+                        isScheduled = true;
+                    }
+                    //timer.schedule(timerTask, 1000, 1000);
                 } else if (btnExit.isPressed(event)) {
                     MainActivity.main.exit();
                 }
                 break;
             case GAMESTATE_PLAY:
                 rocker.isRocked(event);
+                if (btnBack.isPressed(event)) {
+                    gameState = GAMESTATE_MENU;
+                }
                 break;
         }
         return true;
@@ -286,6 +312,18 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
         switch (gameState) {
             case GAMESTATE_MENU:
                 gameIsOver = false;
+                for(Body body1 :vcBalls) {
+                    world.destroyBody(body1);
+                }
+                vcBalls.removeAllElements();
+                countNum = 0;
+                specialBall = BLACK;
+                allCreated = false;
+                world.destroyBody(myBall);
+                myBall = createCircle(screenW / 2, screenH / 2, RADIUS, 1);
+                vForce.set(0, 0);
+                lives = 3;
+                time = 0;
                 break;
             case GAMESTATE_PLAY:
                 if (!gameIsOver) {
@@ -305,8 +343,10 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
                         }
                         body = body.m_next;
                     }
-                    countTime++;
-                    if ((countTime == createEnemyTime) && (countNum < enemyNum)) {
+                    if (!allCreated) {
+                        countTime++;
+                    }
+                    if (countTime == createEnemyTime) {
                         countTime = 0;
                         vcBalls.addElement(createCircle(screenW / 2, screenH / 10 + 50, RADIUS, 1));
                         int rand = random.nextInt(120) + 30;
@@ -316,9 +356,43 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
                     }
                     if (((countTime == (createEnemyTime / 2))) && (vcBalls.size() != 0)) {
                         vcBalls.elementAt(countNum - 1).applyForce(vEnemyForce, vcBalls.elementAt(countNum - 1).getWorldCenter());
+                        if (countNum == enemyNum) {
+                            countTime = 0;
+                            allCreated = true;
+                        }
                     }
-                    break;
+                    switch (collision) {
+                        case NONE:
+                            break;
+                        case COLLIDE_TO_RED:
+                            lives -= 1;
+                            if (lives == 0) {
+                                //gameIsOver = true;
+                            }
+                            break;
+                        case COLLIDE_TO_BLACK:
+                            for(Body body1 :vcBalls) {
+                                world.destroyBody(body1);
+                            }
+                            vcBalls.removeAllElements();
+                            countNum = 0;
+                            specialBall = GREEN;
+                            allCreated = false;
+                            break;
+                        case COLLIDE_TO_GREEN:
+                            world.destroyBody(vcBalls.elementAt(enemyNum - 1));
+                            vcBalls.removeElementAt(enemyNum - 1);
+                            lives++;
+                            countNum--;
+                            specialBall = BLACK;
+                            allCreated = false;
+                            break;
+                    }
+                    collision = NONE;
+                } else {
+
                 }
+                break;
         }
     }
 
@@ -345,8 +419,27 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
     @Override
     public void add(ContactPoint point) {
         //当前游戏状态为进行游戏时
-        if (gameState == GAMESTATE_PLAY) {
-
+        if ((gameState == GAMESTATE_PLAY) && !gameIsOver) {
+            if(point.shape1.getBody() == myBall) {
+                for (Body body : vcBalls) {
+                    if (point.shape2.getBody() == body) {
+                        if ((countNum == enemyNum) && (body == vcBalls.elementAt(enemyNum - 1))) {
+                            switch (specialBall) {
+                                case BLACK:
+                                    collision = COLLIDE_TO_BLACK;
+                                    break;
+                                case GREEN:
+                                    collision = COLLIDE_TO_GREEN;
+                                    break;
+                            }
+                            return;
+                        } else {
+                            collision = COLLIDE_TO_RED;
+                            return;
+                        }
+                    }
+                }
+            }
         }
     }
 
