@@ -67,9 +67,8 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
     private boolean gameIsOver;
     private Integer lives;
     private long time = 0;
-    private TimerTask timerTask;
     private Timer timer;
-    private boolean isScheduled;
+    public static boolean isScheduled;
     private boolean allCreated;
     private int collision;
     private final int NONE = 0;
@@ -134,13 +133,7 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
         allCreated = false;
         collision = NONE;
         specialBall = BLACK;
-        lives = new Integer(3);
-        timerTask = new TimerTask() {
-            public void run() {
-                time += 1000;
-            }
-        };
-        timer = new Timer();
+        lives = 3;
         vcBalls = new Vector<Body>();
         random = new Random();
         pref = PreferenceManager.getDefaultSharedPreferences(context);
@@ -273,6 +266,7 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
                         if ((timeString.compareTo(pref.getString("record", "")) > 0)) {
                             editor.putString("record", timeString);
                         }
+                        editor.commit();
                         paint.setColor(Color.WHITE);
                         paint.setTextSize(screenW / 8);
                         canvas.drawText("Record", screenW / 18, screenH / 5, paint);
@@ -298,12 +292,13 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
             case GAMESTATE_MENU:
                 if (btnStart.isPressed(event)) {
                     gameState = GAMESTATE_PLAY;
-                    timer.purge();
-                    if (!isScheduled) {
-                        timer.schedule(timerTask, 1000, 1000);
-                        isScheduled = true;
-                    }
-                    //timer.schedule(timerTask, 1000, 1000);
+                    timer = new Timer();
+                    timer.schedule(new TimerTask() {
+                        public void run() {
+                            time += 1000;
+                        }
+                    }, 1000, 1000);
+                    isScheduled = true;
                 } else if (btnExit.isPressed(event)) {
                     MainActivity.main.exit();
                 }
@@ -312,6 +307,7 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
                 if (!gameIsOver) {
                     rocker.isRocked(event);
                 } else if (btnBack.isPressed(event)) {
+                    rocker.resetXY();
                     gameState = GAMESTATE_MENU;
                 }
                 break;
@@ -335,7 +331,6 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
                 allCreated = false;
                 world.destroyBody(myBall);
                 myBall = createCircle(screenW / 2, screenH / 2, RADIUS, 1);
-                //vForce.set(0, 0);
                 lives = 3;
                 time = 0;
                 break;
@@ -348,9 +343,7 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
                     rocker.setZero();
                     Body body = world.getBodyList();
                     for (int i = 1; i < world.getBodyCount(); i++) {
-                        if ((body.m_userData) instanceof MyRect) {
-
-                        } else if ((body.m_userData) instanceof MyCircle) {
+                        if ((body.m_userData) instanceof MyCircle) {
                             MyCircle circle = (MyCircle) (body.m_userData);
                             circle.setX(body.getPosition().x * RATE);
                             circle.setY(body.getPosition().y * RATE);
@@ -404,7 +397,9 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
                     }
                     collision = NONE;
                 } else {
-
+                    timer.cancel();
+                    timer.purge();
+                    isScheduled = false;
                 }
                 break;
         }
@@ -470,6 +465,23 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
     @Override
     public void result(ContactResult point) {
 
+    }
+
+    public void thWait() {
+            try {
+                synchronized (MySurfaceView.class) {
+                    wait();
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+    }
+
+    public void thNotify() {
+        synchronized (MySurfaceView.class)
+        {
+                notifyAll();
+        }
     }
 
 }

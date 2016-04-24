@@ -71,4 +71,9 @@ public class MyRocker {
         rad = 0;
     }
 
+    public void resetXY() {
+        smallCenterX = bigCenterX;
+        smallCenterY = bigCenterY;
+    }
+
 }
