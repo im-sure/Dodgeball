@@ -1,13 +1,14 @@
 package cloudchen.dodgeball;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Paint.Style;
-import android.util.Log;
+import android.preference.PreferenceManager;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceHolder.Callback;
@@ -25,7 +26,6 @@ import org.jbox2d.dynamics.contacts.ContactPoint;
 import org.jbox2d.dynamics.contacts.ContactResult;
 
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.Random;
 import java.util.Timer;
@@ -76,6 +76,8 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
     private final int COLLIDE_TO_RED = 1;
     private final int COLLIDE_TO_BLACK = 2;
     private final int COLLIDE_TO_GREEN = 3;
+    private SharedPreferences.Editor editor;
+    private SharedPreferences pref;
 
     //声明游戏物体
     private final float RADIUS = 30;
@@ -141,6 +143,8 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
         timer = new Timer();
         vcBalls = new Vector<Body>();
         random = new Random();
+        pref = PreferenceManager.getDefaultSharedPreferences(context);
+        editor = pref.edit();
     }
 
     //SurfaceView创建
@@ -265,7 +269,16 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
                     rocker.drawRocker(canvas, paintalpha);
                     if (gameIsOver) {
                         canvas.drawRect(0, 0, screenW, screenH, paintalpha);
-
+                        editor.putString("currenttime", timeString);
+                        if ((timeString.compareTo(pref.getString("record", "")) > 0)) {
+                            editor.putString("record", timeString);
+                        }
+                        paint.setColor(Color.WHITE);
+                        paint.setTextSize(screenW / 8);
+                        canvas.drawText("Record", screenW / 18, screenH / 5, paint);
+                        canvas.drawText(pref.getString("record", ""), screenW / 18, screenH / 10 * 3, paint);
+                        canvas.drawText("Curent Time", screenW / 18, screenH / 5 * 2, paint);
+                        canvas.drawText(timeString, screenW / 18, screenH / 2, paint);
                         btnBack.draw(canvas, paint);
                     }
                     break;
@@ -296,8 +309,9 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
                 }
                 break;
             case GAMESTATE_PLAY:
-                rocker.isRocked(event);
-                if (btnBack.isPressed(event)) {
+                if (!gameIsOver) {
+                    rocker.isRocked(event);
+                } else if (btnBack.isPressed(event)) {
                     gameState = GAMESTATE_MENU;
                 }
                 break;
@@ -321,7 +335,7 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
                 allCreated = false;
                 world.destroyBody(myBall);
                 myBall = createCircle(screenW / 2, screenH / 2, RADIUS, 1);
-                vForce.set(0, 0);
+                //vForce.set(0, 0);
                 lives = 3;
                 time = 0;
                 break;
@@ -367,7 +381,7 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
                         case COLLIDE_TO_RED:
                             lives -= 1;
                             if (lives == 0) {
-                                //gameIsOver = true;
+                                gameIsOver = true;
                             }
                             break;
                         case COLLIDE_TO_BLACK:
