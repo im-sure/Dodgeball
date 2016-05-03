@@ -38,7 +38,6 @@ import java.util.Vector;
 
 public class MySurfaceView extends SurfaceView implements Callback, Runnable, ContactListener {
 
-    private final String TAG = "MySurfaceView";
     private Thread th;
     private SurfaceHolder sfh;
     private Canvas canvas;
@@ -63,9 +62,11 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
     //声明游戏状态
     private final int GAMESTATE_MENU = 0;
     private final int GAMESTATE_PLAY = 1;
+    private final int GAMESTATE_PAUSE = 2;
     private int gameState = GAMESTATE_MENU;
     private boolean gameIsOver;
-    private Integer lives;
+    public static boolean gameIsPaused;
+    private int lives;
     private long time = 0;
     private Timer timer;
     public static boolean isScheduled;
@@ -230,7 +231,7 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
                     paint.setColor(Color.BLACK);
                     paint.setTextSize(screenW / 10);
                     canvas.drawText(timeString, screenW / 4 * 3, screenH / 20, paint);
-                    String livesString = "× " + lives.toString();
+                    String livesString = "× " + Integer.toString(lives);
                     canvas.drawText(livesString, screenW / 8, screenH / 20, paint);
                     canvas.drawBitmap(bmpHeart, 10, 10, paint);
                     Body body = world.getBodyList();
@@ -276,6 +277,8 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
                         btnBack.draw(canvas, paint);
                     }
                     break;
+                case GAMESTATE_PAUSE:
+                    break;
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -311,6 +314,8 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
                     gameState = GAMESTATE_MENU;
                 }
                 break;
+            case GAMESTATE_PAUSE:
+                break;
         }
         return true;
     }
@@ -322,6 +327,7 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
         switch (gameState) {
             case GAMESTATE_MENU:
                 gameIsOver = false;
+                gameIsPaused = false;
                 for(Body body1 :vcBalls) {
                     world.destroyBody(body1);
                 }
@@ -401,6 +407,11 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
                     timer.purge();
                     isScheduled = false;
                 }
+                if (gameIsPaused) {
+                    gameState = GAMESTATE_PAUSE;
+                }
+                break;
+            case GAMESTATE_PAUSE:
                 break;
         }
     }
@@ -429,7 +440,7 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
     public void add(ContactPoint point) {
         //当前游戏状态为进行游戏时
         if ((gameState == GAMESTATE_PLAY) && !gameIsOver) {
-            if(point.shape1.getBody() == myBall) {
+            if (point.shape1.getBody() == myBall) {
                 for (Body body : vcBalls) {
                     if (point.shape2.getBody() == body) {
                         if ((countNum == enemyNum) && (body == vcBalls.elementAt(enemyNum - 1))) {
@@ -466,22 +477,4 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
     public void result(ContactResult point) {
 
     }
-
-    public void thWait() {
-            try {
-                synchronized (MySurfaceView.class) {
-                    wait();
-                }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-    }
-
-    public void thNotify() {
-        synchronized (MySurfaceView.class)
-        {
-                notifyAll();
-        }
-    }
-
 }

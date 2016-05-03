@@ -9,8 +9,7 @@ import android.view.WindowManager;
 public class MainActivity extends Activity {
 
     public static MainActivity main;
-    private MySurfaceView surfaceView;
-    private boolean islocked = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -18,35 +17,19 @@ public class MainActivity extends Activity {
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         this.requestWindowFeature(Window.FEATURE_NO_TITLE);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-        surfaceView = new MySurfaceView(this);
-        setContentView(surfaceView);
+        setContentView(new MySurfaceView(this));
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        if (islocked){
-            surfaceView.thNotify();
-            islocked = false;
-        }
+        MySurfaceView.gameIsPaused = false;
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        /*synchronized (MainActivity.this)
-        {
-            try {
-                synchronized (surfaceView) {
-                    surfaceView.wait();
-                    islocked = true;
-                }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }*/
-        surfaceView.thWait();
-        islocked = true;
+        MySurfaceView.gameIsPaused = true;
     }
 
     public void exit() {

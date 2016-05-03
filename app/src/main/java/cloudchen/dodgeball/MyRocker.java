@@ -75,5 +75,4 @@ public class MyRocker {
         smallCenterX = bigCenterX;
         smallCenterY = bigCenterY;
     }
-
 }
