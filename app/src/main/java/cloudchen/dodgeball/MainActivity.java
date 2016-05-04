@@ -29,7 +29,9 @@ public class MainActivity extends Activity {
     @Override
     protected void onPause() {
         super.onPause();
-        MySurfaceView.gameIsPaused = true;
+        if (MySurfaceView.gameState == MySurfaceView.GAMESTATE_PLAY) {
+            MySurfaceView.gameIsPaused = true;
+        }
     }
 
     public void exit() {

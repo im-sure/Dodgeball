@@ -60,12 +60,12 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
     private int iterations = 10;
 
     //声明游戏状态
-    private final int GAMESTATE_MENU = 0;
-    private final int GAMESTATE_PLAY = 1;
-    private final int GAMESTATE_PAUSE = 2;
-    private int gameState = GAMESTATE_MENU;
-    private boolean gameIsOver;
+    public static final int GAMESTATE_MENU = 0;
+    public static final int GAMESTATE_PLAY = 1;
+    public static final int GAMESTATE_PAUSE = 2;
+    public static int gameState = GAMESTATE_MENU;
     public static boolean gameIsPaused;
+    private boolean gameIsOver;
     private int lives;
     private long time = 0;
     private Timer timer;
@@ -298,7 +298,9 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
                     timer = new Timer();
                     timer.schedule(new TimerTask() {
                         public void run() {
-                            time += 1000;
+                            if (!gameIsPaused) {
+                                time += 1000;
+                            }
                         }
                     }, 1000, 1000);
                     isScheduled = true;
@@ -326,8 +328,8 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
     public void logic() {
         switch (gameState) {
             case GAMESTATE_MENU:
-                gameIsOver = false;
                 gameIsPaused = false;
+                gameIsOver = false;
                 for(Body body1 :vcBalls) {
                     world.destroyBody(body1);
                 }
@@ -341,7 +343,7 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
                 time = 0;
                 break;
             case GAMESTATE_PLAY:
-                if (!gameIsOver) {
+                if (!gameIsOver && !gameIsPaused) {
                     world.step(timeStep, iterations);
                     vForce.set(MYMAXFORCE * rocker.getHypotenuse() / bigCenterR * (float) Math.cos(rocker.getRad()),
                             MYMAXFORCE * rocker.getHypotenuse() / bigCenterR * (float) Math.sin(rocker.getRad()));
@@ -402,16 +404,18 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
                             break;
                     }
                     collision = NONE;
-                } else {
+                } else if (gameIsOver) {
                     timer.cancel();
                     timer.purge();
                     isScheduled = false;
-                }
-                if (gameIsPaused) {
+                } else if (gameIsPaused) {
                     gameState = GAMESTATE_PAUSE;
                 }
                 break;
             case GAMESTATE_PAUSE:
+                if (!gameIsPaused) {
+                    gameState = GAMESTATE_PLAY;
+                }
                 break;
         }
     }
