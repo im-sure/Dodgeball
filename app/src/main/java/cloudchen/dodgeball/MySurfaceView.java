@@ -9,6 +9,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Paint.Style;
 import android.preference.PreferenceManager;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceHolder.Callback;
@@ -49,8 +50,6 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
     //添加一个物理世界
     //屏幕映射到现实世界的比例 30px：1m；
     private final float RATE = 30;
-    private final float MYMAXFORCE = 100;
-    private final float MAXFORCE = 5000;
     private World world;
     private AABB aabb;
     private Vec2 gravity;
@@ -64,12 +63,12 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
     public static final int GAMESTATE_PLAY = 1;
     public static final int GAMESTATE_PAUSE = 2;
     public static int gameState = GAMESTATE_MENU;
+    private boolean isFirstInMenu;
     public static boolean gameIsPaused;
     private boolean gameIsOver;
     private int lives;
     private long time = 0;
     private Timer timer;
-    public static boolean isScheduled;
     private boolean allCreated;
     private int collision;
     private final int NONE = 0;
@@ -81,6 +80,8 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
 
     //声明游戏物体
     private final float RADIUS = 30;
+    private final float MYMAXFORCE = 100;
+    private final float MAXFORCE = 5000;
     private final int enemyNum = 5;
     private Bitmap bmpStart, bmpExit, bmpBack;
     private MyButton btnStart, btnExit, btnBack;
@@ -130,7 +131,7 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
         bmpBack = BitmapFactory.decodeResource(getResources(), R.mipmap.back);
         bmpHeart = BitmapFactory.decodeResource(getResources(), R.mipmap.heart);
 
-        isScheduled = false;
+        isFirstInMenu = true;
         allCreated = false;
         collision = NONE;
         specialBall = BLACK;
@@ -143,7 +144,7 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
 
     //SurfaceView创建
     public void surfaceCreated(SurfaceHolder holder) {
-        if (gameState == GAMESTATE_MENU) {
+        if ((gameState == GAMESTATE_MENU) && isFirstInMenu ) {
             screenW = this.getWidth();
             screenH = this.getHeight();
             btnStart = new MyButton(bmpStart, screenW / 2 - bmpStart.getWidth() / 2, screenH / 10 * 7);
@@ -299,11 +300,10 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
                     timer.schedule(new TimerTask() {
                         public void run() {
                             if (!gameIsPaused) {
-                                time += 1000;
+                                time += 100;
                             }
                         }
-                    }, 1000, 1000);
-                    isScheduled = true;
+                    }, 1000, 100);
                 } else if (btnExit.isPressed(event)) {
                     MainActivity.main.exit();
                 }
@@ -328,19 +328,22 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
     public void logic() {
         switch (gameState) {
             case GAMESTATE_MENU:
-                gameIsPaused = false;
-                gameIsOver = false;
-                for(Body body1 :vcBalls) {
-                    world.destroyBody(body1);
+                if (isFirstInMenu) {
+                    gameIsPaused = false;
+                    gameIsOver = false;
+                    for (Body body1 : vcBalls) {
+                        world.destroyBody(body1);
+                    }
+                    vcBalls.removeAllElements();
+                    countNum = 0;
+                    specialBall = BLACK;
+                    allCreated = false;
+                    world.destroyBody(myBall);
+                    myBall = createCircle(screenW / 2, screenH / 2, RADIUS, 1);
+                    lives = 3;
+                    time = 0;
+                    isFirstInMenu = false;
                 }
-                vcBalls.removeAllElements();
-                countNum = 0;
-                specialBall = BLACK;
-                allCreated = false;
-                world.destroyBody(myBall);
-                myBall = createCircle(screenW / 2, screenH / 2, RADIUS, 1);
-                lives = 3;
-                time = 0;
                 break;
             case GAMESTATE_PLAY:
                 if (!gameIsOver && !gameIsPaused) {
@@ -383,6 +386,7 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
                             lives -= 1;
                             if (lives == 0) {
                                 gameIsOver = true;
+                                isFirstInMenu = true;
                             }
                             break;
                         case COLLIDE_TO_BLACK:
@@ -406,9 +410,7 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
                     collision = NONE;
                 } else if (gameIsOver) {
                     timer.cancel();
-                    timer.purge();
-                    isScheduled = false;
-                } else if (gameIsPaused) {
+                } else {
                     gameState = GAMESTATE_PAUSE;
                 }
                 break;
