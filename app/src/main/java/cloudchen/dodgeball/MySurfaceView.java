@@ -63,12 +63,12 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
     public static final int GAMESTATE_PLAY = 1;
     public static final int GAMESTATE_PAUSE = 2;
     public static int gameState = GAMESTATE_MENU;
-    private boolean isFirstInMenu;
+    public static boolean isFirstInMenu;
     public static boolean gameIsPaused;
-    private boolean gameIsOver;
+    public static boolean gameIsOver;
     private int lives;
     private long time = 0;
-    private Timer timer;
+    public static Timer timer;
     private boolean allCreated;
     private int collision;
     private final int NONE = 0;
@@ -103,7 +103,7 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
     private float bigCenterX, bigCenterY, bigCenterR;
 
     public MySurfaceView(Context context, AttributeSet attrs) {
-        super(context);
+        super(context, attrs);
         this.setKeepScreenOn(true);
         sfh = this.getHolder();
         sfh.addCallback(this);
@@ -231,7 +231,7 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
                     paint.setColor(Color.BLACK);
                     paint.setTextSize(screenW / 10);
                     canvas.drawText(timeString, screenW / 4 * 3, screenH / 20, paint);
-                    String livesString = "× " + Integer.toString(lives);
+                    String livesString = "×" + Integer.toString(lives);
                     canvas.drawText(livesString, screenW / 8, screenH / 20, paint);
                     canvas.drawBitmap(bmpHeart, 10, 10, paint);
                     Body body = world.getBodyList();
@@ -311,8 +311,8 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
                 if (!gameIsOver) {
                     rocker.isRocked(event);
                 } else if (btnBack.isPressed(event)) {
-                    rocker.resetXY();
                     gameState = GAMESTATE_MENU;
+                    gameIsOver = false;
                 }
                 break;
             case GAMESTATE_PAUSE:
@@ -329,7 +329,6 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
             case GAMESTATE_MENU:
                 if (isFirstInMenu) {
                     gameIsPaused = false;
-                    gameIsOver = false;
                     for (Body body1 : vcBalls) {
                         world.destroyBody(body1);
                     }
@@ -341,11 +340,11 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
                     myBall = createCircle(screenW / 2, screenH / 2, RADIUS, 1);
                     lives = 3;
                     time = 0;
+                    rocker.resetXY();
                     isFirstInMenu = false;
                 }
                 break;
             case GAMESTATE_PLAY:
-                MainActivity.adLayout.setVisibility(GONE);
                 if (!gameIsOver && !gameIsPaused) {
                     world.step(timeStep, iterations);
                     vForce.set(MYMAXFORCE * rocker.getHypotenuse() / bigCenterR * (float) Math.cos(rocker.getRad()),
