@@ -3,6 +3,7 @@ package cloudchen.dodgeball;
 import android.app.Activity;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
+import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.LinearLayout;
@@ -14,6 +15,7 @@ import net.youmi.android.banner.AdView;
 public class MainActivity extends Activity {
 
     public static MainActivity main;
+    public static LinearLayout adLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,7 +28,7 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
 
         AdView adView = new AdView(this, AdSize.FIT_SCREEN);
-        LinearLayout adLayout = (LinearLayout) findViewById(R.id.adLayout);
+        adLayout = (LinearLayout) findViewById(R.id.adLayout);
         adLayout.addView(adView);
     }
 

@@ -345,6 +345,7 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
                 }
                 break;
             case GAMESTATE_PLAY:
+                MainActivity.adLayout.setVisibility(GONE);
                 if (!gameIsOver && !gameIsPaused) {
                     world.step(timeStep, iterations);
                     vForce.set(MYMAXFORCE * rocker.getHypotenuse() / bigCenterR * (float) Math.cos(rocker.getRad()),
