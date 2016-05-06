@@ -24,4 +24,5 @@ dependencies {
     testCompile 'junit:junit:4.12'
     compile 'com.android.support:appcompat-v7:23.2.1'
     compile files('libs/jbox2d.jar')
+    compile files('libs/YoumiSdk_v6.1.0_2016-02-26.jar')
 }

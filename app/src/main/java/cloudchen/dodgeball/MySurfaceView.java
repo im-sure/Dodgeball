@@ -9,6 +9,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Paint.Style;
 import android.preference.PreferenceManager;
+import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceHolder.Callback;
@@ -101,8 +102,7 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
     private float smallCenterX, smallCenterY, smallCenterR;
     private float bigCenterX, bigCenterY, bigCenterR;
 
-
-    public MySurfaceView(Context context) {
+    public MySurfaceView(Context context, AttributeSet attrs) {
         super(context);
         this.setKeepScreenOn(true);
         sfh = this.getHolder();
