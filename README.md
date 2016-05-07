@@ -3,7 +3,7 @@
 
 开始界面
 
-![pic_1](http://i64.tinypic.com/71ofba.jpg)
+![pic_1](http://i68.tinypic.com/2q1wdx0.jpg)
 
 游戏界面
 
