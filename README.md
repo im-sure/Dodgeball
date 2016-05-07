@@ -4,9 +4,11 @@
 开始界面
 
 ![pic_1](http://i64.tinypic.com/71ofba.jpg)
+
 游戏界面
 
 ![pic_2](http://i67.tinypic.com/2pzw6kl.jpg)
+
 结束界面
 
-1[pic_3](http://i63.tinypic.com/6404uw.jpg)
+![pic_3](http://i63.tinypic.com/6404uw.jpg)
