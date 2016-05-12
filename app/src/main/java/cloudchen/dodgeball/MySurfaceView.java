@@ -15,6 +15,8 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceHolder.Callback;
 import android.view.SurfaceView;
 
+import net.youmi.android.spot.SpotManager;
+
 import org.jbox2d.collision.AABB;
 import org.jbox2d.collision.CircleDef;
 import org.jbox2d.collision.PolygonDef;
@@ -66,6 +68,7 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
     public static boolean isFirstInMenu;
     public static boolean gameIsPaused;
     public static boolean gameIsOver;
+    private boolean isFirstInGameOver;
     private int lives;
     private long time = 0;
     public static Timer timer;
@@ -102,8 +105,8 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
     private float smallCenterX, smallCenterY, smallCenterR;
     private float bigCenterX, bigCenterY, bigCenterR;
 
-    public MySurfaceView(Context context, AttributeSet attrs) {
-        super(context, attrs);
+    public MySurfaceView(Context context) {
+        super(context);
         this.setKeepScreenOn(true);
         sfh = this.getHolder();
         sfh.addCallback(this);
@@ -131,6 +134,7 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
         bmpHeart = BitmapFactory.decodeResource(getResources(), R.mipmap.heart);
 
         isFirstInMenu = true;
+        isFirstInGameOver = true;
         allCreated = false;
         collision = NONE;
         specialBall = BLACK;
@@ -342,6 +346,7 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
                     time = 0;
                     rocker.resetXY();
                     isFirstInMenu = false;
+                    isFirstInGameOver = true;
                 }
                 break;
             case GAMESTATE_PLAY:
@@ -408,7 +413,11 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
                     }
                     collision = NONE;
                 } else if (gameIsOver) {
-                    timer.cancel();
+                    if (isFirstInGameOver) {
+                        timer.cancel();
+                        SpotManager.getInstance(MainActivity.main).showSpotAds(MainActivity.main);
+                        isFirstInGameOver = false;
+                    }
                 } else {
                     gameState = GAMESTATE_PAUSE;
                 }
