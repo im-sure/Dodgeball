@@ -417,6 +417,7 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
                         timer.cancel();
                         SpotManager.getInstance(MainActivity.main).showSpotAds(MainActivity.main);
                         isFirstInGameOver = false;
+                        MainActivity.submit(null);
                     }
                 } else {
                     gameState = GAMESTATE_PAUSE;
