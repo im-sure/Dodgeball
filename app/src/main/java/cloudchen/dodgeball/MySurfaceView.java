@@ -10,6 +10,7 @@ import android.graphics.Paint;
 import android.graphics.Paint.Style;
 import android.preference.PreferenceManager;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceHolder.Callback;
@@ -71,6 +72,7 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
     private boolean isFirstInGameOver;
     private int lives;
     private long time = 0;
+    private long worldRecord = 0;
     public static Timer timer;
     private boolean allCreated;
     private int collision;
@@ -267,17 +269,33 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
                     rocker.drawRocker(canvas, paintalpha);
                     if (gameIsOver) {
                         canvas.drawRect(0, 0, screenW, screenH, paintalpha);
-                        editor.putString("currenttime", timeString);
-                        if ((timeString.compareTo(pref.getString("record", "")) > 0)) {
-                            editor.putString("record", timeString);
+                        if (isFirstInGameOver) {
+                            if ((timeString.compareTo(pref.getString("record", "")) > 0)) {
+                                editor.putString("record", timeString);
+                                editor.putLong("record in long", time);
+                            }
+                            editor.commit();
+                            long recordInLong = pref.getLong("record in long", 0);
+                            Log.d("Dodgeball", "record in long is " + recordInLong);
+                            worldRecord = MainActivity.query();
+                            if (worldRecord < recordInLong) {
+                                worldRecord = recordInLong;
+                                if (MainActivity.getQueryState() > 0) {
+                                    MainActivity.submit(worldRecord);
+                                }
+                            }
+                            Log.d("Dodgeball", "world record is " + worldRecord);
                         }
-                        editor.commit();
+                        Date recordDate = new Date(worldRecord);
+                        String recordString = simpleDateFormat.format(recordDate);
                         paint.setColor(Color.WHITE);
                         paint.setTextSize(screenW / 8);
-                        canvas.drawText("Record", screenW / 18, screenH / 5, paint);
-                        canvas.drawText(pref.getString("record", ""), screenW / 18, screenH / 10 * 3, paint);
-                        canvas.drawText("Curent Time", screenW / 18, screenH / 5 * 2, paint);
-                        canvas.drawText(timeString, screenW / 18, screenH / 2, paint);
+                        canvas.drawText("World Record", screenW / 18, screenH / 10, paint);
+                        canvas.drawText(recordString, screenW / 18, screenH / 5, paint);
+                        canvas.drawText("Your Record", screenW / 18, screenH / 10 * 3, paint);
+                        canvas.drawText(pref.getString("record", ""), screenW / 18, screenH / 5 * 2, paint);
+                        canvas.drawText("Current Time", screenW / 18, screenH / 2, paint);
+                        canvas.drawText(timeString, screenW / 18, screenH / 5 * 3, paint);
                         btnBack.draw(canvas, paint);
                     }
                     break;
@@ -417,7 +435,6 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
                         timer.cancel();
                         SpotManager.getInstance(MainActivity.main).showSpotAds(MainActivity.main);
                         isFirstInGameOver = false;
-                        MainActivity.submit(null);
                     }
                 } else {
                     gameState = GAMESTATE_PAUSE;

@@ -1,13 +1,12 @@
 package cloudchen.dodgeball;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.pm.ActivityInfo;
+import android.os.Build;
 import android.os.Bundle;
-import android.view.View;
+import android.util.Log;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.Toast;
 
 import net.youmi.android.AdManager;
 import net.youmi.android.spot.SpotManager;
@@ -22,6 +21,9 @@ import cn.bmob.v3.listener.SaveListener;
 public class MainActivity extends Activity {
 
     public static MainActivity main;
+
+    private static long mRecord;
+    public static int mQueryState;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,6 +40,9 @@ public class MainActivity extends Activity {
         SpotManager.getInstance(this).setAnimationType(SpotManager.ANIM_ADVANCE);
 
         Bmob.initialize(this, "7b4aa127922f003fe4a388b347c442e0");
+
+        mRecord = 0;
+        mQueryState = 0;
     }
 
     @Override
@@ -72,58 +77,61 @@ public class MainActivity extends Activity {
         }
     }
 
-    public static void submit(View view) {
-        String name = "CloudChen";
-        String feedback = "test";
-        if (name.equals("") || feedback.equals("")) {
+    public static void submit(long record) {
+        String deviceName = Build.MODEL;
+        long worldRecord = record;
+        if (deviceName.equals("") || worldRecord == 0) {
             return;
         }
         // 创建BmobObject对象
-        Feedback feedbackObj = new Feedback();
-        feedbackObj.setName(name);
-        feedbackObj.setFeedback(feedback);
-        feedbackObj.save(main, new SaveListener() {
+        WorldRecord worldRecordObj = new WorldRecord();
+        worldRecordObj.setDeviceName(deviceName);
+        worldRecordObj.setWorldRecord(worldRecord);
+        worldRecordObj.save(main, new SaveListener() {
             @Override
             public void onSuccess() {
-                Toast.makeText(
-                        main,
-                        "submit success",
-                        Toast.LENGTH_LONG).show();
+
             }
 
             @Override
             public void onFailure(int i, String s) {
-                Toast.makeText(
-                        main,
-                        "submit failure",
-                        Toast.LENGTH_LONG).show();
+
             }
         });
     }
 
-    public static void queryAll(View view) {
+    public static long query() {
         // 通过BmobQuery创建一个查询对象
-        BmobQuery<Feedback> query = new BmobQuery<Feedback>();
-        query.findObjects(main, new FindListener<Feedback>() {
+        final BmobQuery<WorldRecord> query = new BmobQuery<WorldRecord>();
+        query.findObjects(main, new FindListener<WorldRecord>() {
             @Override
-            public void onSuccess(List<Feedback> feedbacks) {
-                AlertDialog.Builder builder = new AlertDialog.Builder(
-                        main);
-                builder.setTitle("Query");
-                String str = "";
-                for (Feedback feedback : feedbacks) {
-                    str += feedback.getName() + ":" +
-                            feedback.getFeedback() + "\n";
+            public void onSuccess(List<WorldRecord> worldRecords) {
+                for (WorldRecord worldRecord : worldRecords) {
+                    if (worldRecord.getWorldRecord() > mRecord) {
+                        mRecord = worldRecord.getWorldRecord();
+                    }
                 }
-                builder.setMessage(str);
-                builder.create().show();
+                mQueryState = 1;
             }
 
             @Override
             public void onError(int i, String s) {
-
+                mQueryState = -1;
             }
         });
+        while (mQueryState == 0) {
+            try {
+                Thread.sleep(100);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        Log.d("Dodgeball", "mrecord is " + mRecord);
+        return  mRecord;
+    }
+
+    public static int getQueryState() {
+        return mQueryState;
     }
 
     public void exit() {
