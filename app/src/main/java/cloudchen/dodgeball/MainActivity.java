@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.content.pm.ActivityInfo;
 import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Window;
 import android.view.WindowManager;
 
@@ -126,7 +125,6 @@ public class MainActivity extends Activity {
                 e.printStackTrace();
             }
         }
-        Log.d("Dodgeball", "mrecord is " + mRecord);
         return  mRecord;
     }
 

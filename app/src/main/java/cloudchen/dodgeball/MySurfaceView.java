@@ -9,8 +9,6 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Paint.Style;
 import android.preference.PreferenceManager;
-import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceHolder.Callback;
@@ -46,7 +44,7 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
     private SurfaceHolder sfh;
     private Canvas canvas;
     private Paint paint;
-    private Paint paintalpha;
+    private Paint paintAlpha;
     private int screenW, screenH;
     private boolean flag;
 
@@ -115,11 +113,11 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
         paint = new Paint();
         paint.setAntiAlias(true);
         paint.setStyle(Style.FILL);
-        paintalpha = new Paint();
-        paintalpha.setAntiAlias(true);
-        paintalpha.setStyle(Style.FILL);
-        paintalpha.setColor(Color.BLACK);
-        paintalpha.setAlpha(0x77);
+        paintAlpha = new Paint();
+        paintAlpha.setAntiAlias(true);
+        paintAlpha.setStyle(Style.FILL);
+        paintAlpha.setColor(Color.BLACK);
+        paintAlpha.setAlpha(0x77);
         this.setFocusable(true);
         this.setFocusableInTouchMode(true);
         aabb = new AABB();
@@ -216,17 +214,17 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
                 case GAMESTATE_MENU:
                     paint.setColor(Color.BLUE);
                     paint.setTextSize(screenW / 5);
-                    canvas.drawText("Dodgeball", screenW / 18, screenH / 5, paint);
+                    canvas.drawText("躲避球", screenW / 5, screenH / 5, paint);
                     paint.setTextSize(screenW / 20);
-                    canvas.drawText("What you control are the FORCE", screenW / 6, screenH / 10 * 3, paint);
-                    canvas.drawText("and the DIRECTION of the ball", screenW / 6, screenH / 20 * 7, paint);
-                    canvas.drawText("Blue Ball - The ball you control", screenW / 6, screenH / 20 * 9, paint);
+                    canvas.drawText("请通过360°摇杆控制小球受力", screenW / 6, screenH / 10 * 3, paint);
+                    canvas.drawText("的方向与力度", screenW / 6, screenH / 20 * 7, paint);
+                    canvas.drawText("蓝球——你所控制的小球", screenW / 6, screenH / 20 * 9, paint);
                     paint.setColor(Color.RED);
-                    canvas.drawText("Red Ball - Your enemy, ESCAPE!", screenW / 6, screenH / 2, paint);
+                    canvas.drawText("红球——你的敌人,不要与它们接触", screenW / 6, screenH / 2, paint);
                     paint.setColor(Color.BLACK);
-                    canvas.drawText("Black Ball - Destroy all enemies", screenW / 6, screenH / 20 * 11, paint);
+                    canvas.drawText("黑球——毁掉所有的敌人", screenW / 6, screenH / 20 * 11, paint);
                     paint.setColor(Color.GREEN);
-                    canvas.drawText("Green Ball - Get one extra life", screenW / 6, screenH / 5 * 3, paint);
+                    canvas.drawText("绿球——得到一条额外的生命", screenW / 6, screenH / 5 * 3, paint);
                     btnStart.draw(canvas, paint);
                     btnExit.draw(canvas, paint);
                     break;
@@ -266,9 +264,9 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
                         }
                         body = body.m_next;
                     }
-                    rocker.drawRocker(canvas, paintalpha);
+                    rocker.drawRocker(canvas, paintAlpha);
                     if (gameIsOver) {
-                        canvas.drawRect(0, 0, screenW, screenH, paintalpha);
+                        canvas.drawRect(0, 0, screenW, screenH, paintAlpha);
                         if (isFirstInGameOver) {
                             if ((timeString.compareTo(pref.getString("record", "")) > 0)) {
                                 editor.putString("record", timeString);
@@ -276,7 +274,6 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
                             }
                             editor.commit();
                             long recordInLong = pref.getLong("record in long", 0);
-                            Log.d("Dodgeball", "record in long is " + recordInLong);
                             worldRecord = MainActivity.query();
                             if (worldRecord < recordInLong) {
                                 worldRecord = recordInLong;
@@ -284,18 +281,17 @@ public class MySurfaceView extends SurfaceView implements Callback, Runnable, Co
                                     MainActivity.submit(worldRecord);
                                 }
                             }
-                            Log.d("Dodgeball", "world record is " + worldRecord);
                         }
                         Date recordDate = new Date(worldRecord);
                         String recordString = simpleDateFormat.format(recordDate);
                         paint.setColor(Color.WHITE);
                         paint.setTextSize(screenW / 8);
-                        canvas.drawText("World Record", screenW / 18, screenH / 10, paint);
-                        canvas.drawText(recordString, screenW / 18, screenH / 5, paint);
-                        canvas.drawText("Your Record", screenW / 18, screenH / 10 * 3, paint);
-                        canvas.drawText(pref.getString("record", ""), screenW / 18, screenH / 5 * 2, paint);
-                        canvas.drawText("Current Time", screenW / 18, screenH / 2, paint);
-                        canvas.drawText(timeString, screenW / 18, screenH / 5 * 3, paint);
+                        canvas.drawText("世界记录", screenW / 4, screenH / 10, paint);
+                        canvas.drawText(recordString, screenW / 4, screenH / 5, paint);
+                        canvas.drawText("你的记录", screenW / 4, screenH / 10 * 3, paint);
+                        canvas.drawText(pref.getString("record", ""), screenW / 4, screenH / 5 * 2, paint);
+                        canvas.drawText("本次时长", screenW / 4, screenH / 2, paint);
+                        canvas.drawText(timeString, screenW / 4, screenH / 5 * 3, paint);
                         btnBack.draw(canvas, paint);
                     }
                     break;
